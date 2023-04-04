@@ -35,4 +35,73 @@ read_csv("https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-cap
 
 ```
 
+## Read in data
 
+```{r read}
+
+bird_observations <- read_csv("https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-cap.256.10&entityid=53edaa7a0e083013d9bf20322db1780e")
+surveys <- read_csv("https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-cap.256.10&entityid=b2466fa5cb5ed7ee1ea91398fc291c59")
+sites <- read_csv("https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-cap.256.10&entityid=81bf72420e69077097fb0790dcdc63a6")
+taxalist <- read_csv("https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-cap.256.10&entityid=58f863b7e3066e68536a9cacdc7bd58e")
+
+```
+
+## Explore data
+
+```{r explore}
+
+# view data in a spreadsheet-style viewer
+View(bird_observations)
+View(taxalist)
+
+# returns dimensions of the dataframe by number of rows and number of cols
+dim(bird_observations)
+
+# returns the top six rows of the dataframe
+head(bird_observations)
+
+# returns all the columns and some info about the cols
+glimpse(bird_observations)
+
+# similar to glimpse but returns some summary statistics about the cols
+summary(bird_observations)
+
+# returns column names 
+names(bird_observations)
+
+# returns unique values in a column. In this case we can see all the different bird species IDs
+unique(bird_observations$species_id)
+
+```
+
+## Subset data
+
+```{r subset}
+
+birds_subset <- bird_observations %>% 
+  filter(species_id %in% c("BHCO", "RWBL")) %>% 
+  filter(site_id %in% c("LI-W", "NU-C"))
+
+```
+
+## Left join 
+
+```{r left join}
+
+birds_left <- birds_subset %>% 
+  left_join(y = sites, by = "site_id")
+
+```
+
+## Full join
+```{r}
+
+birds_full <- full_join(x = birds_subset, y = sites, by = "site_id")
+
+```
+
+Stopped at 9.1.6
+
+## Note
+
+Question 1.94 just merge with the sites
