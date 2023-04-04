@@ -1,0 +1,55 @@
+---
+title: "Introduction to R Markdown"
+author: "Maya Almaraz"
+date: "2023-04-03"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+bibliography: references.bib
+reference-section-title: Reference List
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## This is a header
+
+-   This is **bold**
+-   This is *italic*
+
+## Chapter 18
+
+[link](www.rstudio.com)
+
+N^2^O
+
+N~2~O
+
+## Adding citations
+
+This is an important fact [@lobell2011]
+
+## Adding tables
+
+| Col1   | Col2 | Col3 |
+|--------|------|------|
+| Item 1 |      |      |
+| Item 2 |      |      |
+|        |      |      |
+
+```{r example}
+heights_ft <-c(5.2, 6.0, 5.7)
+
+important_coef <- 3.14
+
+```
+
+## Exercise: new chunk
+
+```{r new chunk}
+heights_ft*3.14
+```
+
+# New list

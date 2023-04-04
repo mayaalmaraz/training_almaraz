@@ -1,0 +1,82 @@
+---
+title: "Markdown Analysis"
+author: "Maya Almaraz"
+date: "2023-04-03"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This data set contains North Pole Environmental Observatory Bottle Chemistry data.Measurements were taken from sea ice platforms each April or May from 2000-2014. Investigators used a CTD-O2 system to measure seawater conductivity, temperature, depth, and dissolved oxygen content, and collected Niskin bottle samples for measurements of salinity, oxygen isotopes composition, total alkalinity, and concentrations of phosphate, silicic acid, nitrate, nitrite, ammonium, and barium. The available in-situ dissolved oxygen measurements were collected beginning in 2002.
+
+This data was loaded on April 3, 2023 from this [this link](https://arcticdata.io/catalog/view/doi:10.18739/A25T3FZ8X)
+
+### Read data
+
+#### Set up
+
+```{r setup2}
+library(readr)
+```
+
+```{r read data, warnings=FALSE, message=FALSE}
+bg_chem <- read_csv("data/BGchem2008data.csv")
+```
+
+#### Data exploration
+```{r data, expl, eval=FALSE, echo=FALSE}
+## column names
+colnames(bg_chem)
+
+## structure of my data
+str(bg_chem)
+
+## summary stats
+summary(bg_chem)
+
+## Open data in a tab
+View(bg_chem)
+
+## unique values in a column
+unique(bg_chem$Date)
+```
+
+
+## Analysis
+
+### Calculate summary statistics
+
+```{r sum stats}
+nitrate <- mean(bg_chem$NO3)
+nitrite <- mean(bg_chem$NO2)
+amm <- mean(bg_chem$NH4)
+phos <- mean(bg_chem$P)
+```
+
+
+### Calculate mean Redfield ratio
+
+Redfield ratio 16:1
+
+```{r ratio calc}
+ratio <- (amm + nitrate + nitrite) / phos
+```
+
+
+### Plot Redfield ratio
+
+```{r plot}
+plot(bg_chem$P, bg_chem$NO3 + bg_chem$NO2 + bg_chem$NH4)
+```
+
+
+## Conclusion
+
+The Redfield ratio is `r round(ratio)`
