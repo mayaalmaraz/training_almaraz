@@ -1,0 +1,38 @@
+---
+title: 'R Practice: Tidy Data and Joins'
+author: "Maya Almaraz"
+date: "2023-04-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+Exercise on tidy data and joins from chapter 9 from [this link](https://learning.nceas.ucsb.edu/2023-04-coreR/session_09.html).
+
+## Load libraries
+
+```{r libraries, eval=FALSE, echo=FALSE}
+library(readr)
+library(dplyr)
+library(lubridate)
+```
+
+## Upload data
+
+```{r upload}
+
+read_csv("https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-cap.256.10&entityid=53edaa7a0e083013d9bf20322db1780e")
+
+read_csv("https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-cap.256.10&entityid=b2466fa5cb5ed7ee1ea91398fc291c59")
+
+read_csv("https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-cap.256.10&entityid=81bf72420e69077097fb0790dcdc63a6")
+
+read_csv("https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-cap.256.10&entityid=58f863b7e3066e68536a9cacdc7bd58e")
+
+```
+
+
