@@ -1,0 +1,151 @@
+---
+title: "Intro to Data Visualization"
+author: "Maya Almaraz"
+date: "2023-04-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load packages
+```{r load packages, warning = FALSE, message = FALSE}
+
+library(dplyr)
+library(readr)
+library(tidyr)
+library(forcats)
+library(ggplot2)
+library(leaflet)
+library(DT)
+library(scales)
+
+```
+
+## Read data
+```{r read data}
+
+escapement <- read_csv("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/urn%3Auuid%3Af119a05b-bbe7-4aea-93c6-85434dcb1c5e")
+
+```
+
+Should add description of data and where it came from
+
+## Explore data
+```{r explore}
+
+colnames(escapement)
+
+glimpse(escapement)
+
+range(escapement$sampleDate)
+
+head(escapement)
+
+unique(escapement$Species)
+
+```
+
+## Getting our data ready to plot
+
+```{r cleaning}
+
+annual_esc <- escapement %>% 
+  separate(sampleDate, c("Year", "Month", "Day"), sep = "-") %>% 
+  mutate(Year = as.numeric(Year)) %>% 
+  group_by(Species, SASAP.Region, Year) %>% 
+  summarize(escape = sum(DailyCount)) %>% 
+  filter(Species %in% c("Chinook", "Sockeye", "Chum", "Coho", "Pink"))
+
+unique(annual_esc$Species)
+
+head(annual_esc)
+```
+## Plotting with `ggplot`
+
+## Essential components
+```{r essentials}
+## Option 1
+ggplot(data = annual_esc,
+       aes(x = Species,
+           y = escape))+ # plus sign adds layers
+  geom_col() # to create column bar plots
+
+## Option 2
+ggplot(data = annual_esc)+
+  geom_col(aes(x = Species, 
+               y = escape))
+
+# Option 3
+ggplot()+
+  geom_col(data = annual_esc,
+           aes(x = Species, # aes defines mapping aesthetics
+               y = escape)) 
+
+```
+
+## Different geoms
+
+**Boxplot** 
+```{r boxplot}
+
+annual_esc %>% 
+  filter(Year == 1974, # just plotting for one year of data
+         Species %in% c("Chum", "Pink")) %>% # data you want to plot
+  ggplot(aes(x = Species, # map these aesthetics
+             y = escape))+
+  geom_boxplot()
+
+```
+**Line and point**
+
+```{r line and point}
+
+annual_esc %>% 
+  filter(Species == "Sockeye", # filter for sockeye
+         SASAP.Region == "Bristol Bay") %>% # second filter
+  ggplot(aes(x = Year,
+             y = escape))+
+  geom_line()+ # makes a line graph
+  geom_point() # adds points to the line graph
+
+```
+### Customizing our plot
+fill = blue inside the `aes()`
+
+```{r custom blue}
+
+ggplot(annual_esc,
+       aes(x = Species,
+           y = escape,
+           fill = "blue"))+ # trying to make bars blue but failed
+  geom_col()
+
+# dont have a variable called fill so need to
+
+```
+
+fill = "blue" outside of `aes()`
+```{r make blue}
+
+ggplot(annual_esc,
+       aes(x = Species,
+           y = escape,))+ # data inside aes function
+  geom_col(fill = "blue") # looks outside aes function
+
+```
+
+ Adding color by region
+ 
+```{r color by region}
+
+ggplot(annual_esc,
+       aes(x = Species, 
+           y = escape,
+           fill = SASAP.Region)) +
+    geom_col()
+
+```
+ 
+ 
