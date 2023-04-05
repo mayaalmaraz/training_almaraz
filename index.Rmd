@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Lessons
-- Intro to Rmd
+- [Intro to Rmd](intro-to-rmarkdown.html)
 - Cleaning and Wrangling Data
 - Data Vis
 - Spatial Data
@@ -19,3 +19,6 @@ knitr::opts_chunk$set(echo = TRUE)
 - Joins
 - Visualizing Data
 - Wrangling and Maps
+
+## Additional resources
+[Great website example](https://emp-des.github.io/emp-reports/cwq-report.html)
