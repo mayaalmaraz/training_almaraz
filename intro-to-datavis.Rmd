@@ -147,5 +147,231 @@ ggplot(annual_esc,
     geom_col()
 
 ```
+ Subset data
+```{r subset}
+
+annual_esc_2000 <- annual_esc %>% 
+  filter(Year %in% c(2000:2016)) #filter to have the years we want
+
+## quick check
+unique(annual_esc_2000$Year)
+
+```
+ 
+ Plot with `facet_wrap()`
+```{r faceting}
+
+ggplot(annual_esc_2000,
+       aes(x = Year, # define map aesthetics
+           y = escape,
+           color = Species))+ #color line
+  geom_line()+
+  geom_point()+
+  facet_wrap(~SASAP.Region, #creates multiple plots at once
+             scales = "free_y") # allows each plot to have their own scale
+# ~ calls into datset with facet function (need to look into variable of data to create facet)
+
+```
+ 
+ ### Setting ggplot themes
+ 
+ `theme_*()` function
+ 
+```{r themes}
+
+ggplot(annual_esc_2000,
+       aes(x = Year, 
+           y = escape,
+           color = Species))+ 
+  geom_line()+
+  geom_point()+
+  facet_wrap(~SASAP.Region, 
+             scales = "free_y")
+theme_bw()+ # black and white
+  ylab("Escapement")+ # change y axis name
+ggtitle("Annual Salmon Escapement by Region") # add title to graph
+
+ggplot(annual_esc_2000,
+       aes(x = Year, 
+           y = escape,
+           color = Species))+ 
+  geom_line()+
+  geom_point()+
+  facet_wrap(~SASAP.Region, 
+             scales = "free_y")+
+theme_dark()+ # new theme
+  ylab("Escapement")+ 
+ggtitle("Annual Salmon Escapement by Region") 
+
+ggplot(annual_esc_2000,
+       aes(x = Year, 
+           y = escape,
+           color = Species))+ 
+  geom_line()+
+  geom_point()+
+  facet_wrap(~SASAP.Region, 
+             scales = "free_y")+
+theme_light()+ # new theme
+  ylab("Escapement")+ 
+ggtitle("Annual Salmon Escapement by Region") 
+
+
+```
+ Removing legend title and moving legend 
+```{r move legend}
+
+ggplot(annual_esc_2000,
+       aes(x = Year, 
+           y = escape,
+           color = Species))+ 
+  geom_line()+
+  geom_point()+
+  facet_wrap(~SASAP.Region, 
+             scales = "free_y")+
+theme_bw()+ 
+  ylab("Escapement")+ 
+ggtitle("Annual Salmon Escapement by Region")+ # add another layer
+  theme(legend.position = "bottom", # move legend to the bottom
+        legend.title = element_blank()) # remove legend title
+
+```
+ ## Saving theme into an object
+```{r saving theme}
+
+my_theme <- theme_bw()+
+  theme(legend.position = "bottom",
+        legend.title = element_blank())
+
+```
+ 
+ Creating plot with saved theme
+ 
+```{r use saved theme}
+
+ggplot(annual_esc_2000,
+       aes(x = Year,
+           y = escape,
+           color = Species)) +
+    geom_line() +
+    geom_point() +
+    facet_wrap(~SASAP.Region,
+                scales = "free_y") +
+    ylab("Escapement") +
+    ggtitle("Annual Salmon Escapement by Region") +
+    my_theme
+
+```
+ Angle years to 45 degrees and x axis breaks by 2
+```{r angle axis}
+
+ggplot(annual_esc_2000,
+       aes(x = Year,
+           y = escape,
+           color = Species)) +
+    geom_line() +
+    geom_point() +
+    scale_x_continuous(breaks = seq(2000, 2016, 2)) + # axis in intervals of 2
+    facet_wrap( ~ SASAP.Region,
+                scales = "free_y") +
+    ylab("Escapement") +
+    ggtitle("Annual Salmon Escapement by Region") +
+    my_theme +
+    theme(axis.text.x = element_text(angle = 45, # angle axis
+                                     vjust = 0.5))
+
+```
+ Smarter ticks using `scales()`
+ 
+```{r smarter ticks}
+
+annual_region_plot <- ggplot(annual_esc_2000,
+       aes(x = Year,
+           y = escape,
+           color = Species)) +
+    geom_line() +
+    geom_point() +
+    scale_x_continuous(breaks = seq(2000, 2016, 2)) +
+    scale_y_continuous(labels = comma)+ #change axis to not scientific notation
+    facet_wrap( ~ SASAP.Region,
+                scales = "free_y") +
+    ylab("Escapement") +
+    ggtitle("Annual Salmon Escapement by Region") +
+    my_theme +
+    theme(axis.text.x = element_text(angle = 45,
+                                     vjust = 0.5))
+
+annual_region_plot
+
+# use tab to align code
+
+```
+ 
+ ### Saving plots
+```{r saving}
+
+# ggsave by default saves the last plot you saved
+
+ggsave("figs/annual_esc_region.png", annual_region_plot, width = 12, height = 8, units = "in") 
+
+# saved in R Studio in files -> figs 
+
+```
+ 
+ ## Maps with `leaflet`
+ 
+ Make an interactive map that plots all regions
+```{r get locations}
+
+#need to locations to make map (creating subset of locations to make map)
+
+location <- escapement %>% 
+  distinct(Location, Latitude, Longitude) %>%  #creating a subset to get lat/long of locations
+  drop_na()
+
+```
+ 
+ Creating map with `leaflet()`
+ 
+```{r create map}
+
+# leaflet makes interactive maps
+# leaflet uses pipe instead of plus
+
+leaflet(location) %>%  # tell leaflet I want to plot locations
+  addTiles() %>% 
+  addMarkers(lng = ~Longitude,
+             lat = ~Latitude,
+             popup = ~Location)
+  
+```
+ 
+ Map with different basemap
+ 
+```{r dif base map}
+
+leaflet(location) %>%
+    addWMSTiles(
+        "https://www.gebco.net/data_and_products/gebco_web_services/web_map_service/mapserv?request=getmap&service=wms&BBOX=-90,-180,90,360&crs=EPSG:4326&format=image/jpeg&layers=gebco_latest&width=1200&height=600&version=1.3.0", # add specific map
+        layers = 'GEBCO_LATEST',
+        attribution = "Imagery reproduced from the GEBCO_2022 Grid, WMS 1.3.0 GetMap, www.gebco.net"
+    ) %>%
+    addCircleMarkers( # change look of markers
+        lng = ~ Longitude,
+        lat = ~ Latitude,
+        popup = ~ Location,
+        radius = 5, # size of marker
+        # set fill properties
+        fillColor = "salmon", # color of marker
+        fillOpacity = 1,
+        # set stroke properties
+        stroke = T,
+        weight = 0.5,
+        color = "white", #color outside marker
+        opacity = 1
+    )
+
+# can search for other WMSTiles maps
+
+```
  
  
