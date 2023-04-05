@@ -236,7 +236,7 @@ ggtitle("Annual Salmon Escapement by Region")+ # add another layer
 
 ```
  ## Saving theme into an object
-```{r saving theme}
+```{r saving theme, warning = FALSE, message = FALSE}
 
 my_theme <- theme_bw()+
   theme(legend.position = "bottom",
