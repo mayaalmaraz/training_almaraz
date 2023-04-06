@@ -15,8 +15,261 @@ library(sf)
 library(ggplot2)
 library(leaflet)
 library(scales)
-library(ggmap)
+library(ggmap) # base maps to static maps
 library(dplyr)
 library(readr)
+```
+
+## Upload data
+- Download data from [link](https://dev.nceas.ucsb.edu/view/urn:uuid:6f07cb25-a4a1-48e8-95cb-74f532f3ce2d) to computer
+- Go to data file
+- Click upload
+- Select zip file from downloads
+- See files pop up in data folder in R Studio
+
+## Explore AK Regions data
+
+```{r read ak regions data}
+ak_regions <- sf::read_sf("data/ak_regions_simp.shp") # click tab to find file
+```
+
+## Plot map
+```{r simple plot}
+plot(ak_regions)
+
+# plot not great and needs data wrangling
+# check class(ak_regions) in console, see sf and data.frame
+```
+
+```{r explore data}
+head(ak_regions)
+glimpse(ak_regions)
+
+# View(ak_regions) in console and see geometry column with spatial data
+```
+
+```{r look at CRS}
+st_crs(ak_regions)
+
+# learn it's unprojected and thus not good for maps (may explain map above), need to change
+```
+
+## Transform CRS of `ak_regions`
+```{r transform crs}
+ak_regions_3338 <- ak_regions %>% 
+  st_transform(crs = 3338) # pipe so don't need to specify x
+
+# see new object 
+
+st_crs(ak_regions_3338) #looking at transformed data
+
+# we will use three EPSG codes (4326 is default, coords for whole world, 3857 used a lot in big spatial tools like google maps)
+
+```
+
+```{r plot again}
+plot(ak_regions_3338) # looks way better
+
+```
+## sf and the tidyverse
+
+```{r}
+colnames(ak_regions_3338)
+```
+
+```{r}
+ak_regions_3338 %>% 
+  select(region)
+```
+
+```{r}
+ak_regions_3338 %>% filter(region == "Yukon") # within region column only filter for where the value is Yukon
+
+# ?sf::tidyverse in console
+```
+
+## Spatial Joins
+- Ask how many people live in each of the AK regions
+- Read in the population data from a csv and turn it into an sf object
+- Use a spatial join (st_join()) to assign each city to a region
+- Use group_by() and summarize() to calculate the total population by region
+- Save the spatial object you created using write_sf()
+
+```{r}
+pop <- read_csv("data/alaska_population.csv")
+
+# View(pop) and class(pop) in console - don't see geometry column, not spatial data
+
+```
+
+```{r}
+# can transform population data into spatial data 
+
+pop_4326 <- st_as_sf(pop, # use to transform
+                     coords = c("lng", "lat"), 
+                     crs = 4326, # dont have metadata so use default crs
+                    remove = FALSE) # takes coord data (lat/lng) and removes cause now have geometry data
+
+# View(pop_4326) in console
+                    
+```
+
+```{r error example}
+# join data using st_join
+
+#pop_joined <- st_join(pop_4326, ak_regions_3338, join = st_within) 
+# want to know pops within the regions so use st_within
+
+# see error 'st_crs(x) == st_crs(y) is not TRUE', can only join spatial data where crs' are the same, need another transormation 
+
+```
+
+```{r}
+pop_3338 <- st_transform(pop_4326, crs = 3338)
+
+st_crs(pop_3338) # see if changed
+```
+
+```{r}
+pop_joined <- st_join(pop_3338, ak_regions_3338, join = st_within)
+
+# View(pop_joined) in console, see columns for population
+```
+
+```{r group by}
+pop_region <- pop_joined %>% 
+  as.data.frame() %>%  # don't need to specify because of pipe, turn into data frame
+  group_by(region) %>% 
+    summarize(total_pop = sum(population)) #create new column called total pop
+
+head(pop_region)
+
+# class(pop_region) shows it's still a data frame and you need it to be a spatial or sf object
+```
+```{r}
+# join ak_region_3338 with pop_region by common key region:
+pop_region_3338 <- left_join(ak_regions_3338, pop_region, by = "region") 
+
+#colnames(pop_region_3338) and View(pop_region_3338) in console see that added total pop to table
+```
+
+```{r plot by total pop}
+# square brackets accessing differnt variables
+# plot this object and within it plot this variable total pop
+
+plot(pop_region_3338["total_pop"])
+```
+```{r}
+# plot but group by mgmt area
+
+pop_mgmt_3338 <- pop_region_3338 %>% 
+  group_by(mgmt_area) %>% 
+  summarize(total_pop = sum(total_pop), do_union = FALSE) #do union within summarize to preseve geometries for alaska regions
+
+head(pop_mgmt_3338)
+```
+```{r}
+#plot total pop by mgmt code
+
+plot(pop_mgmt_3338["total_pop"])
+```
+```{r}
+write_sf(pop_region_3338, "data/ak_regions_population.shp") #save spatial regions and then the file path
+
+# see new shape file added to data and some meta data files added
+```
+
+## Visualize with ggplot
+
+```{r}
+ggplot(pop_region_3338) +
+  geom_sf(aes(fill = total_pop))+ #fill aesthetic with total pop cause that's what we want to show
+  labs(fill = "Total Population")+ # change legend title
+  scale_fill_continuous(labels = comma, # change from sci notation
+                        low = "khaki", # change colors
+                        high = "firebrick")+
+  theme_bw() # change background
+
+#alteratively
+
+ggplot(pop_region_3338) +
+  geom_sf(aes(fill = log10(total_pop)))+ # change scale to log
+  labs(fill = "Total Population")+ 
+  scale_fill_viridis_c(labels = comma)+ #color blind colors
+  theme_bw()
+
+# rainbow parentheses: Code --> rainbow parenthese
+#can add scale bar using ggsn
+```
+## Rivers spatial data
+
+```{r read in rivers}
+
+rivers_3338 <- read_sf("data/ak_rivers_simp.shp") #press tab to find file
+
+# st_crs(rivers) #see it's also alaksa albers, add 3338 to object
+
+# rm(rivers) to remove old object from environment
+
+```
+
+```{r}
+# map total pop and added all points of communities/cities:
+
+ggplot()+
+  geom_sf(pop_region_3338, mapping=aes(fill = total_pop))+ # need to call the argument mapping
+  geom_sf(pop_3338, mapping=aes())+ # looking for and aes
+  geom_sf(rivers_3338, mapping=aes())
+
+# two geom_sf because over laying two spatial datasets
+
+# colnames(rivers_3338) in console
+
+# make map look nicer
+
+ggplot()+
+  geom_sf(pop_region_3338, mapping=aes(fill = log10(total_pop)))+ # need to call the argument mapping and change to log10
+  geom_sf(pop_3338, mapping=aes(), color = "red4", size = 0.5)+ # looking for and aes and change dot color and change size of dots
+  geom_sf(rivers_3338, mapping=aes(linewidth = StrOrder))+ #map fewer rivers
+  scale_linewidth(range = c(0.05, 0.05), guide = "none")+ # make rivers skinnier and get rid of second legend
+  scale_fill_viridis_c(labels = comma)+ # change color and get rid of sci notation
+  labs(fill = "Total Population",
+       title = "Map of Alaska Populations")+ # add title
+  theme(plot.title = element_text(hjust = 0.5)) # center title
+  
+```
+Skip section 15.6
+
+## Leaflet interactive map
+
+```{r}
+# create a custom
+
+epsg3338 <- leaflet::leafletCRS(
+    crsClass = "L.Proj.CRS",
+    code = "EPSG:3338",
+    proj4def =  "+proj=aea +lat_1=55 +lat_2=65 +lat_0=50 +lon_0=-154 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+    resolutions = 2 ^ (16:7)
+)
+
+# now we have a project we can use in our leaflet map (create an object)
+```
+
+```{r}
+
+# have the projected but now need crs
+
+pop_region_4326 <- pop_region_3338 %>% st_transform(crs = 4326)
+
+# created two objects (pieces of spatial data) to create a plot
+```
+
+```{r}
+m <- leaflet(options = leafletOptions(crs = epsg3338)) %>%
+    addPolygons(data = pop_region_4326,
+                fillColor = "lightgreen",
+                weight = 2) # change size of boundary lines
+
+m  # need to call the object to see map
 ```
 
