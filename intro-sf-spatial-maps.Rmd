@@ -1,0 +1,22 @@
+---
+title: "Intro to sf package for spatial data and making maps"
+author: "Maya Almaraz"
+date: "2023-04-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries
+```{r libraries}
+library(sf)
+library(ggplot2)
+library(leaflet)
+library(scales)
+library(ggmap)
+library(dplyr)
+library(readr)
+```
+
