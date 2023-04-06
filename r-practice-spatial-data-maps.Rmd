@@ -1,0 +1,237 @@
+---
+title: 'R Practice: Spatial Data and Making Maps'
+author: "Maya Almaraz"
+date: "2023-04-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries
+
+```{r libraries}
+library(readr)
+library(dplyr)
+library(sf)
+library(ggplot2)
+library(scales)
+library(leaflet)
+library(ggmap)
+```
+
+```{r data}
+
+pika <- read_csv("https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-nwt.268.1&entityid=43270add3532c7f3716404576cfb3f2c")
+
+elevation <- read_csv("https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-nwt.268.1&entityid=6a10b35988119d0462837f9bfa31dd2f")
+
+```
+
+## Explore pika data
+
+```{r explore pika}
+
+glimpse(pika)
+head(pika)
+dim(pika)
+summary(pika)
+names(pika)
+unique(pika$Site)
+
+# colnames(pika) in console
+# View(pika) in console
+
+```
+
+## Subset pika data
+
+```{r subset pika}
+
+pika_clean <- pika %>% 
+  select(Date, Station, UTM_Easting, UTM_Northing, Concentration_pg_g, Site, Sex)
+
+head(pika_clean)
+```
+## Check pika class
+
+```{r class pika}
+
+class(pika_clean$Station)
+class(pika_clean$Site)
+class(pika_clean$Sex)
+
+```
+
+# Change pika class
+
+```{r change pika class}
+
+pika_clean <- pika_clean %>% 
+    mutate(
+        Station = as.factor(Station),
+        Site = as.factor(Site),
+        Sex = as.factor(Sex)
+    )
+
+```
+
+## Recheck pika class
+
+```{r recheck pika class}
+
+class(pika_clean$Station)
+class(pika_clean$Site)
+class(pika_clean$Sex)
+
+```
+
+## Rename pika site
+
+```{r rename pika site}
+
+pika_clean <- pika_clean %>% 
+    mutate(Site = recode(Site,  
+        "CG" = "Cable Gate",
+        "WK" = "West Knoll",
+        "LL" = "Long Lake"))
+
+```
+
+## Change order of pika colunms
+
+```{r change pika column order}
+
+# View(pika_clean) in console
+
+pika_clean <- pika_clean %>% 
+  relocate(Site, .before = Station) %>% 
+  relocate(Sex, .after = UTM_Northing)
+  
+# View(pika_clean) in console
+```
+
+## Subset elevation data
+
+```{r subset elevation}
+
+elevation_clean <- elevation %>% 
+  select(Station, Elev_M)
+
+head(elevation_clean)
+
+```
+
+## Change elevation class
+
+```{r elevation class}
+
+class(elevation_clean$Station)
+
+elevation_clean <- elevation_clean %>% 
+    mutate(Station = as.factor(Station))
+
+class(elevation_clean$Station)
+
+```
+
+# Join data sets
+
+```{r full join}
+
+pikas <- full_join(x = pika_clean, y = elevation_clean, by = "Station")
+
+head(pikas)
+
+```
+## Make pikas sf object
+
+```{r sf object pikas}
+
+class(pikas)
+
+pikas_sf <- st_as_sf(x = pikas, 
+                     coords = c("UTM_Easting", "UTM_Northing"))
+
+class(pikas_sf)
+```
+
+## Make CRS
+
+```{r make crs}
+
+pikas_sf <- st_set_crs(pikas_sf, 26913)
+
+st_crs(pikas_sf) 
+
+```
+
+## Simple plot
+
+```{r simple plot}
+
+ggplot(data = pikas_sf, aes(color = Site, shape = "k", size = 5))+
+  geom_sf()+
+  labs(x = "Latitude",
+       y = "Longitude",
+       title = "Pikas are very cute")+
+  theme_bw()
+
+#lesson suggestion
+
+ggplot(data = pikas_sf) +
+    geom_sf(aes(color = Site, shape = Site), alpha = 0.6) +
+    theme_minimal() +
+    labs(
+        title = "Location of Pika Sampling Stations",
+        subtitle = "Niwot Ridge LTER",
+        x = "Latitude (Degrees)",
+        y = "Longitude (Degrees)"
+    ) +
+    theme(axis.text.x = element_text(angle = 30))
+```
+## Add a basemap
+
+```{r base map}
+
+pikas_sf_4326 <- st_transform(pikas_sf, 4326)
+
+nwt_bbox <- c(left = -105.65, bottom = 40.04, right = -105.55, top = 40.1)
+
+nwt_basemap <- ggmap::get_stamenmap(nwt_bbox, zoom = 13, 
+                                    maptype = "terrain")
+
+ggmap(nwt_basemap)
+
+ggmap(nwt_basemap) +
+    geom_sf(pikas_sf_4326, 
+            mapping = aes(color = Site, shape = Site), 
+            inherit.aes = FALSE)
+
+ggmap(nwt_basemap) +
+    geom_sf(pikas_sf_4326,
+            mapping = aes(color = Site, shape = Site),
+            inherit.aes = FALSE) +
+    theme_minimal() +
+    labs(
+        title = "Location of Pika Sampling Stations",
+        subtitle = "Niwot Ridge LTER",
+        x = "Longitude (Degrees)",
+        y = "Latitude (Degrees)"
+    ) +
+    # choosing colors to make sure points are visible
+    scale_color_manual(values = c("black", "red", "purple")) 
+
+```
+
+## Leaflet
+
+```{r leaflet}
+
+leaflet() %>% 
+  addTiles() %>% 
+  addCircles(data = pikas_sf_4326, label = ~Station)
+
+```
+
